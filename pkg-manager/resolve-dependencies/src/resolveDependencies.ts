@@ -910,12 +910,7 @@ async function resolveDependenciesOfDependency (
 
   if (resolveDependencyResult == null) return { resolveDependencyResult: null }
   if (resolveDependencyResult.isLinkedDependency) {
-    console.log('=== LINKED DEPENDENCY ===')
-    console.log('name:', resolveDependencyResult.name)
-    console.log('pkgId:', resolveDependencyResult.pkgId)
-    // Use the pkgId from the resolution result which already has the correct protocol (file: or link:)
-    // based on injectWorkspacePackages setting
-    ctx.dependenciesTree.set(resolveDependencyResult.pkgId as unknown as NodeId, {
+    ctx.dependenciesTree.set(createNodeIdForLinkedLocalPkg(ctx.lockfileDir, resolveDependencyResult.resolution.directory), {
       children: {},
       depth: -1,
       installable: true,
@@ -1561,15 +1556,6 @@ async function resolveDependency (
   // we only ever need to analyze one leaf dep in a graph, so the nodeId can be short and stateless.
   const nodeId = pkgIsLeaf(pkg) ? pkgResponse.body.id as unknown as NodeId : nextNodeId()
 
-  if (pkgResponse.body.resolvedVia === 'workspace') {
-    console.log('=== WORKSPACE PACKAGE RESOLUTION ===')
-    console.log('Package name:', pkg.name)
-    console.log('pkgResponse.body.id:', pkgResponse.body.id)
-    console.log('pkgIsLeaf:', pkgIsLeaf(pkg))
-    console.log('nodeId:', nodeId)
-    console.log('=====================================')
-  }
-
   const parentIsInstallable = options.parentPkg.installable === undefined || options.parentPkg.installable
   const installable = parentIsInstallable && pkgResponse.body.isInstallable !== false
   const isNew = !ctx.resolvedPkgsById[pkgResponse.body.id]
@@ -1615,13 +1601,6 @@ async function resolveDependency (
       parentImporterId,
       optional: currentIsOptional,
     })
-
-    if (pkgResponse.body.resolvedVia === 'workspace') {
-      console.log('=== STORED IN resolvedPkgsById ===')
-      console.log('Key (pkgResponse.body.id):', pkgResponse.body.id)
-      console.log('Value .id:', ctx.resolvedPkgsById[pkgResponse.body.id].id)
-      console.log('===================================')
-    }
   } else {
     ctx.resolvedPkgsById[pkgResponse.body.id].prod = ctx.resolvedPkgsById[pkgResponse.body.id].prod || !wantedDependency.dev && !wantedDependency.optional
     ctx.resolvedPkgsById[pkgResponse.body.id].dev = ctx.resolvedPkgsById[pkgResponse.body.id].dev || wantedDependency.dev

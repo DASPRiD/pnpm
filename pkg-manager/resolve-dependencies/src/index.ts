@@ -205,7 +205,6 @@ export async function resolveDependencies (
     dependenciesTree,
     dedupePeerDependents: opts.dedupePeerDependents,
     dedupeInjectedDeps: opts.dedupeInjectedDeps,
-    injectWorkspacePackages: opts.injectWorkspacePackages,
     lockfileDir: opts.lockfileDir,
     projects: projectsToLink,
     virtualStoreDir: opts.virtualStoreDir,
@@ -213,6 +212,7 @@ export async function resolveDependencies (
     resolvePeersFromWorkspaceRoot: Boolean(opts.resolvePeersFromWorkspaceRoot),
     resolvedImporters,
     peersSuffixMaxLength: opts.peersSuffixMaxLength,
+    workspacePackages: Object.keys(opts.wantedLockfile.importers),
   })
 
   const linkedDependenciesByProjectId: Record<string, LinkedDependency[]> = {}

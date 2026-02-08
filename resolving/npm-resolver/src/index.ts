@@ -598,11 +598,10 @@ function tryResolveFromWorkspace (
   if (!opts.projectDir) {
     throw new Error('Cannot resolve package from workspace because opts.projectDir is not defined')
   }
-  const hardLinkLocalPackages = opts.injectWorkspacePackages === true || wantedDependency.injected
   return tryResolveFromWorkspacePackages(opts.workspacePackages, spec, {
     wantedDependency,
     projectDir: opts.projectDir,
-    hardLinkLocalPackages,
+    hardLinkLocalPackages: opts.injectWorkspacePackages === true || wantedDependency.injected,
     lockfileDir: opts.lockfileDir,
     update: opts.update,
     saveWorkspaceProtocol: opts.saveWorkspaceProtocol,

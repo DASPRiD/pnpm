@@ -87,9 +87,9 @@ export async function resolvePeers<T extends PartialResolvedPackage> (
     resolvePeersFromWorkspaceRoot?: boolean
     dedupePeerDependents?: boolean
     dedupeInjectedDeps?: boolean
-    injectWorkspacePackages?: boolean
     resolvedImporters: ResolvedImporters
     peersSuffixMaxLength: number
+    workspacePackages?: string[]
   }
 ): Promise<{
     dependenciesGraph: GenericDependenciesGraphWithResolvedChildren<T>
@@ -172,8 +172,6 @@ export async function resolvePeers<T extends PartialResolvedPackage> (
     }
   }
   if (opts.dedupeInjectedDeps) {
-    console.log('=== DEDUPLICATING INJECTED DEPS ===')
-    console.log('injectWorkspacePackages:', opts.injectWorkspacePackages)
     dedupeInjectedDeps({
       dependenciesByProjectId,
       projects: opts.projects,
@@ -181,23 +179,15 @@ export async function resolvePeers<T extends PartialResolvedPackage> (
       pathsByNodeId,
       lockfileDir: opts.lockfileDir,
       resolvedImporters: opts.resolvedImporters,
+      workspacePackages: opts.workspacePackages ?? [],
     })
-  } else {
-    console.log('=== SKIPPING DEDUPLICATION (dedupeInjectedDeps is', opts.dedupeInjectedDeps, ') ===')
   }
   if (opts.dedupePeerDependents) {
-    console.log('=== DEDUPLICATING PEER DEPENDENTS ===')
     const duplicates = Array.from(depPathsByPkgId.values()).filter((item) => item.size > 1)
     const allDepPathsMap = deduplicateAll(depGraphWithResolvedChildren, duplicates)
     for (const { id } of opts.projects) {
       for (const [alias, depPath] of dependenciesByProjectId[id].entries()) {
-        const newDepPath = allDepPathsMap[depPath] ?? depPath
-        if (depPath.toString().includes('file:') || newDepPath.toString().includes('link:')) {
-          console.log('Alias:', alias)
-          console.log('Old depPath:', depPath)
-          console.log('New depPath:', newDepPath)
-        }
-        dependenciesByProjectId[id].set(alias, newDepPath)
+        dependenciesByProjectId[id].set(alias, allDepPathsMap[depPath] ?? depPath)
       }
     }
   }
@@ -595,14 +585,6 @@ async function resolvePeersOfNode<T extends PartialResolvedPackage> (
 
   function addDepPathToGraph (depPath: DepPath): void {
     cache?.depPath.resolve(depPath)
-
-    if (nodeId.toString().includes('file:') || depPath.toString().includes('link:')) {
-      console.log('=== addDepPathToGraph ===')
-      console.log('nodeId:', nodeId)
-      console.log('depPath:', depPath)
-      console.log('resolvedPackage.pkgIdWithPatchHash:', resolvedPackage.pkgIdWithPatchHash)
-      console.log('=========================')
-    }
 
     ctx.pathsByNodeId.set(nodeId, depPath)
     ctx.pathsByNodeIdPromises.get(nodeId)!.resolve(depPath)
