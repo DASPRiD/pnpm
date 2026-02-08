@@ -87,6 +87,7 @@ export async function resolvePeers<T extends PartialResolvedPackage> (
     resolvePeersFromWorkspaceRoot?: boolean
     dedupePeerDependents?: boolean
     dedupeInjectedDeps?: boolean
+    injectWorkspacePackages?: boolean
     resolvedImporters: ResolvedImporters
     peersSuffixMaxLength: number
   }
@@ -171,6 +172,8 @@ export async function resolvePeers<T extends PartialResolvedPackage> (
     }
   }
   if (opts.dedupeInjectedDeps) {
+    console.log('=== DEDUPLICATING INJECTED DEPS ===')
+    console.log('injectWorkspacePackages:', opts.injectWorkspacePackages)
     dedupeInjectedDeps({
       dependenciesByProjectId,
       projects: opts.projects,
@@ -179,6 +182,8 @@ export async function resolvePeers<T extends PartialResolvedPackage> (
       lockfileDir: opts.lockfileDir,
       resolvedImporters: opts.resolvedImporters,
     })
+  } else {
+    console.log('=== SKIPPING DEDUPLICATION (dedupeInjectedDeps is', opts.dedupeInjectedDeps, ') ===')
   }
   if (opts.dedupePeerDependents) {
     console.log('=== DEDUPLICATING PEER DEPENDENTS ===')

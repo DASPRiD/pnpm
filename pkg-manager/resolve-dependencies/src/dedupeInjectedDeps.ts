@@ -31,15 +31,38 @@ export function dedupeInjectedDeps<T extends PartialResolvedPackage> (
 type InjectedDepsByProjects = Map<string, Map<string, { depPath: DepPath, id: string }>>
 
 function getInjectedDepsByProjects<T extends PartialResolvedPackage> (
-  opts: Pick<DedupeInjectedDepsOptions<T>, 'projects' | 'pathsByNodeId' | 'depGraph'>
+  opts: Pick<DedupeInjectedDepsOptions<T>, 'projects' | 'pathsByNodeId' | 'depGraph' | 'resolvedImporters'>
 ): InjectedDepsByProjects {
+  console.log('=== getInjectedDepsByProjects: project IDs ===')
+  for (const proj of opts.projects) {
+    console.log('  Project ID:', proj.id)
+  }
+  console.log('=== resolvedImporters keys ===')
+  for (const key of Object.keys(opts.resolvedImporters)) {
+    console.log('  Importer:', key)
+  }
+  console.log('==============================================')
+
   const injectedDepsByProjects = new Map<string, Map<string, { depPath: DepPath, id: string }>>()
   for (const project of opts.projects) {
     for (const [alias, nodeId] of project.directNodeIdsByAlias.entries()) {
       const depPath = opts.pathsByNodeId.get(nodeId)!
+      console.log('=== getInjectedDepsByProjects ===')
+      console.log('Project:', project.id)
+      console.log('Alias:', alias)
+      console.log('nodeId:', nodeId)
+      console.log('depPath:', depPath)
+      console.log('depGraph[depPath].id:', opts.depGraph[depPath].id)
+      console.log('startsWith file:', opts.depGraph[depPath].id.startsWith('file:'))
       if (!opts.depGraph[depPath].id.startsWith('file:')) continue
       const id = opts.depGraph[depPath].id.substring(5)
-      if (opts.projects.some((project) => project.id === id)) {
+      console.log('Extracted id:', id)
+      console.log('Is workspace package (old logic):', opts.projects.some((project) => project.id === id))
+      console.log('Check against resolvedImporters:', id in opts.resolvedImporters)
+      console.log('=================================')
+      // FIX: Check against all resolved importers (all workspace packages), not just the current projects
+      // This fixes the issue where pnpm rm in a specific package doesn't include all workspace packages in opts.projects
+      if (id in opts.resolvedImporters) {
         if (!injectedDepsByProjects.has(project.id)) injectedDepsByProjects.set(project.id, new Map())
         injectedDepsByProjects.get(project.id)!.set(alias, { depPath, id })
       }
@@ -62,6 +85,13 @@ function getDedupeMap<T extends PartialResolvedPackage> (
       // The injected project in the workspace may have dev deps
       const isSubset = Object.entries(opts.depGraph[dep.depPath].children)
         .every(([alias, depPath]) => opts.dependenciesByProjectId[dep.id].get(alias) === depPath)
+      console.log('=== getDedupeMap ===')
+      console.log('Project:', id)
+      console.log('Alias:', alias)
+      console.log('depPath:', dep.depPath)
+      console.log('isSubset:', isSubset)
+      console.log('children:', Object.entries(opts.depGraph[dep.depPath].children))
+      console.log('====================')
       if (isSubset) {
         dedupedInjectedDeps.set(alias, dep.id)
       }
