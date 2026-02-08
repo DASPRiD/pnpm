@@ -392,6 +392,14 @@ function addDirectDependenciesToLockfile (
         spec.startsWith('workspace:')
       )
     ) {
+      if (dep.pkgId.includes('file:') || dep.pkgId.includes('link:')) {
+        console.log('=== BEFORE depPathToRef ===')
+        console.log('dep.alias:', dep.alias)
+        console.log('dep.pkgId:', dep.pkgId)
+        console.log('dep.name:', dep.name)
+        console.log('===========================')
+      }
+
       const ref = depPathToRef(dep.pkgId, {
         alias: dep.alias,
         realName: dep.name,

@@ -318,6 +318,15 @@ export async function resolveDependencyTree<T> (
             return dep
           }
           const resolvedPackage = ctx.dependenciesTree.get(dep.nodeId)!.resolvedPackage as ResolvedPackage
+
+          if (resolvedPackage.id.includes('file:') || resolvedPackage.id.includes('link:')) {
+            console.log('=== BUILDING DirectDependency ===')
+            console.log('dep.nodeId:', dep.nodeId)
+            console.log('resolvedPackage.id:', resolvedPackage.id)
+            console.log('alias:', dep.alias)
+            console.log('=================================')
+          }
+
           return {
             alias: dep.alias,
             catalogLookup: dep.catalogLookup,

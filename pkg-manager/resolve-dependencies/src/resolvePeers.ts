@@ -181,11 +181,18 @@ export async function resolvePeers<T extends PartialResolvedPackage> (
     })
   }
   if (opts.dedupePeerDependents) {
+    console.log('=== DEDUPLICATING PEER DEPENDENTS ===')
     const duplicates = Array.from(depPathsByPkgId.values()).filter((item) => item.size > 1)
     const allDepPathsMap = deduplicateAll(depGraphWithResolvedChildren, duplicates)
     for (const { id } of opts.projects) {
       for (const [alias, depPath] of dependenciesByProjectId[id].entries()) {
-        dependenciesByProjectId[id].set(alias, allDepPathsMap[depPath] ?? depPath)
+        const newDepPath = allDepPathsMap[depPath] ?? depPath
+        if (depPath.toString().includes('file:') || newDepPath.toString().includes('link:')) {
+          console.log('Alias:', alias)
+          console.log('Old depPath:', depPath)
+          console.log('New depPath:', newDepPath)
+        }
+        dependenciesByProjectId[id].set(alias, newDepPath)
       }
     }
   }
@@ -583,6 +590,15 @@ async function resolvePeersOfNode<T extends PartialResolvedPackage> (
 
   function addDepPathToGraph (depPath: DepPath): void {
     cache?.depPath.resolve(depPath)
+
+    if (nodeId.toString().includes('file:') || depPath.toString().includes('link:')) {
+      console.log('=== addDepPathToGraph ===')
+      console.log('nodeId:', nodeId)
+      console.log('depPath:', depPath)
+      console.log('resolvedPackage.pkgIdWithPatchHash:', resolvedPackage.pkgIdWithPatchHash)
+      console.log('=========================')
+    }
+
     ctx.pathsByNodeId.set(nodeId, depPath)
     ctx.pathsByNodeIdPromises.get(nodeId)!.resolve(depPath)
     if (ctx.depPathsByPkgId != null) {
