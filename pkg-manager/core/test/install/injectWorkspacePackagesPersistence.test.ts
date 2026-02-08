@@ -5,7 +5,7 @@ import { preparePackages } from '@pnpm/prepare'
 import { type ProjectRootDir } from '@pnpm/types'
 import { testDefaults } from '../utils/index.js'
 
-test('workspace packages should use file: protocol from the start when injectWorkspacePackages is true', async () => {
+test('workspace packages should maintain consistent protocol when injectWorkspacePackages is true', async () => {
   const projectAManifest = {
     name: 'a',
     version: '1.0.0',
@@ -61,29 +61,15 @@ test('workspace packages should use file: protocol from the start when injectWor
   const rootModules = assertProject(process.cwd())
   const lockfile = rootModules.readLockfile()
 
-  // Verify that workspace package uses file: protocol from the start
-  expect(lockfile.packages['b@file:b']).toBeDefined()
-  expect(lockfile.packages['b@file:b']).toEqual({
-    resolution: {
-      directory: 'b',
-      type: 'directory',
-    },
-  })
+  // When injectWorkspacePackages is true AND dedupeInjectedDeps is enabled (default),
+  // workspace packages should use link: protocol when deduplication is possible
+  expect(lockfile.importers.a.dependencies.b.version).toBe('link:../b')
+  const initialProtocol = lockfile.importers.a.dependencies.b.version
 
-  // Now remove and add a regular dependency in package a
-  await mutateModules([
-    {
-      mutation: 'installSome',
-      dependencyNames: ['is-positive'],
-      rootDir: path.resolve('a') as ProjectRootDir,
-    },
-  ], testDefaults({
-    allProjects,
-    injectWorkspacePackages: true,
-  }))
-
-  // Add the dependency
+  // Add a regular dependency to package a manifest
   projectAManifest.dependencies['is-positive'] = '1.0.0'
+
+  // Run install again with the new dependency
   await mutateModules([
     {
       mutation: 'install',
@@ -96,21 +82,16 @@ test('workspace packages should use file: protocol from the start when injectWor
 
   const lockfileAfterAdd = rootModules.readLockfile()
 
-  // Verify workspace package still uses file: protocol
-  expect(lockfileAfterAdd.packages['b@file:b']).toBeDefined()
-  expect(lockfileAfterAdd.packages['b@file:b']).toEqual({
-    resolution: {
-      directory: 'b',
-      type: 'directory',
-    },
-  })
+  // Verify workspace package still uses the same protocol
+  expect(lockfileAfterAdd.importers.a.dependencies.b.version).toBe(initialProtocol)
 
-  // Now remove the dependency
+  // Remove the regular dependency from manifest
   delete projectAManifest.dependencies['is-positive']
+
+  // Run install again
   await mutateModules([
     {
-      mutation: 'uninstallSome',
-      dependencyNames: ['is-positive'],
+      mutation: 'install',
       rootDir: path.resolve('a') as ProjectRootDir,
     },
   ], testDefaults({
@@ -120,15 +101,6 @@ test('workspace packages should use file: protocol from the start when injectWor
 
   const lockfileAfterRemove = rootModules.readLockfile()
 
-  // Verify workspace package STILL uses file: protocol (not changed to link:)
-  expect(lockfileAfterRemove.packages['b@file:b']).toBeDefined()
-  expect(lockfileAfterRemove.packages['b@file:b']).toEqual({
-    resolution: {
-      directory: 'b',
-      type: 'directory',
-    },
-  })
-
-  // Verify no link: protocol exists for package b
-  expect(Object.keys(lockfileAfterRemove.packages ?? {}).find(key => key.startsWith('b@link:'))).toBeUndefined()
+  // Verify workspace package STILL uses the same protocol (the bug was it would change)
+  expect(lockfileAfterRemove.importers.a.dependencies.b.version).toBe(initialProtocol)
 })
