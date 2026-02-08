@@ -910,9 +910,12 @@ async function resolveDependenciesOfDependency (
 
   if (resolveDependencyResult == null) return { resolveDependencyResult: null }
   if (resolveDependencyResult.isLinkedDependency) {
+    console.log('=== LINKED DEPENDENCY ===')
+    console.log('name:', resolveDependencyResult.name)
+    console.log('pkgId:', resolveDependencyResult.pkgId)
     // Use the pkgId from the resolution result which already has the correct protocol (file: or link:)
     // based on injectWorkspacePackages setting
-    ctx.dependenciesTree.set(resolveDependencyResult.pkgId, {
+    ctx.dependenciesTree.set(resolveDependencyResult.pkgId as unknown as NodeId, {
       children: {},
       depth: -1,
       installable: true,
