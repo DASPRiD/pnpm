@@ -40,8 +40,6 @@ function getInjectedDepsByProjects<T extends PartialResolvedPackage> (
       const depPath = opts.pathsByNodeId.get(nodeId)!
       if (!opts.depGraph[depPath].id.startsWith('file:')) continue
       const id = opts.depGraph[depPath].id.substring(5)
-      // Check if the dependency is a workspace package using the complete workspace packages list
-      // This fixes the issue where single-package operations don't include all workspace packages in opts.projects
       if (opts.workspacePackages.includes(id)) {
         if (!injectedDepsByProjects.has(project.id)) injectedDepsByProjects.set(project.id, new Map())
         injectedDepsByProjects.get(project.id)!.set(alias, { depPath, id })

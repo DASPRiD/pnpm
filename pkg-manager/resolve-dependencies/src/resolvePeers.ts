@@ -585,7 +585,6 @@ async function resolvePeersOfNode<T extends PartialResolvedPackage> (
 
   function addDepPathToGraph (depPath: DepPath): void {
     cache?.depPath.resolve(depPath)
-
     ctx.pathsByNodeId.set(nodeId, depPath)
     ctx.pathsByNodeIdPromises.get(nodeId)!.resolve(depPath)
     if (ctx.depPathsByPkgId != null) {
