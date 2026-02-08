@@ -910,7 +910,9 @@ async function resolveDependenciesOfDependency (
 
   if (resolveDependencyResult == null) return { resolveDependencyResult: null }
   if (resolveDependencyResult.isLinkedDependency) {
-    ctx.dependenciesTree.set(createNodeIdForLinkedLocalPkg(ctx.lockfileDir, resolveDependencyResult.resolution.directory), {
+    // Use the pkgId from the resolution result which already has the correct protocol (file: or link:)
+    // based on injectWorkspacePackages setting
+    ctx.dependenciesTree.set(resolveDependencyResult.pkgId, {
       children: {},
       depth: -1,
       installable: true,
